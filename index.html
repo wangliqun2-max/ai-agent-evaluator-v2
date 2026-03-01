@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>企业智能体落地场景评估工具</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <div class="background-glow"></div>
+    <div class="container">
+        <header>
+            <h1>企业智能体落地场景评估工具</h1>
+            <p class="subtitle">基于认知匹配、业务成熟度及效益可控性维度的科学评估体系</p>
+        </header>
+
+        <main>
+            <div class="split-layout">
+                <div class="left-panel">
+                    <!-- Unified Chat Container -->
+                    <div id="chatContainer" class="chat-container">
+                        <!-- Header Row -->
+                        <div class="chat-header">
+                            <span>AI 咨询顾问 💬</span>
+                            <button type="button" id="newEvalBtn" class="new-eval-btn" title="开启新的评估对话">
+                                + 新建评估
+                            </button>
+                        </div>
+
+                        <!-- Compact Intake Bar -->
+                        <div class="chat-intake-bar">
+                            <input type="text" id="scenarioName" class="intake-name-input"
+                                placeholder="📋 场景名称（必填，例如：智能客服助手）">
+                            <label class="intake-upload-btn" for="fileInput" title="上传需求文档 Word/PDF/Text">
+                                📎 上传文档
+                                <input type="file" id="fileInput" accept=".txt,.pdf,.doc,.docx" hidden>
+                            </label>
+                        </div>
+
+                        <!-- File status / progress -->
+                        <div id="fileStatus" class="file-status hidden" style="padding: 6px 15px; font-size:0.82rem;">
+                            <span class="file-name"></span>
+                            <button type="button" id="removeFile" class="remove-btn">移除</button>
+                        </div>
+                        <div id="analysisProgress" class="analysis-progress hidden" style="margin: 0 15px 8px;">
+                            <div class="progress-bar">
+                                <div class="progress-fill"></div>
+                            </div>
+                            <p class="progress-text">正在读取文件内容...</p>
+                        </div>
+
+                        <!-- Messages -->
+                        <div id="chatMessages" class="chat-messages">
+                            <div class="message ai">
+                                您好，我是企业 Agent 场景落地咨询顾问。请问您所在团队目前想尝试用 AI 解决什么具体的业务难题？请尽量简述一下场景的痛点及期望，我来帮您客观评估立项可行度。
+                            </div>
+                        </div>
+
+                        <!-- Input Row -->
+                        <div class="chat-input-area">
+                            <textarea id="chatInput" class="chat-input" placeholder="输入您的补充说明..." rows="1"></textarea>
+                            <button type="button" id="sendBtn" class="send-btn">发送</button>
+                        </div>
+                    </div>
+                </div> <!-- End Left Panel -->
+
+                <div class="right-panel">
+                    <!-- Placeholder shown before evaluation is complete -->
+                    <div id="resultPlaceholder" class="result-placeholder">
+                        <div class="placeholder-icon">📊</div>
+                        <h3>评估结果待生成</h3>
+                        <p>与左侧 AI 顾问完成对话后<br>评估报告将在此处自动展开</p>
+                    </div>
+                    <form id="evaluationForm" class="hidden">
+                        <!-- 层级一：认知匹配层 -->
+                        <section class="layer-section" id="layer-cognitive">
+                            <div class="layer-header">
+                                <h2>一、认知匹配层 (Cognitive Fit)</h2>
+                                <div class="layer-score">得分: <span id="score-cognitive">0</span></div>
+                            </div>
+
+                            <div class="dimension-card">
+                                <div class="dimension-header">
+                                    <h3>1. 语言与理解复杂度</h3>
+                                    <span class="dimension-badge">语义理解</span>
+                                </div>
+                                <div class="dimension-body">
+                                    <p class="core-question">核心问题：任务是否依赖语义理解，而非规则执行？</p>
+                                    <p class="eval-points">评估要点：非结构化信息理解、生成、推理、语义关联</p>
+
+                                    <div class="score-container">
+                                        <div class="score-selector" data-dim="dim1">
+                                            <button type="button" class="score-btn" data-val="1"></button>
+                                            <button type="button" class="score-btn" data-val="2"></button>
+                                            <button type="button" class="score-btn active" data-val="3"></button>
+                                            <button type="button" class="score-btn" data-val="4"></button>
+                                            <button type="button" class="score-btn" data-val="5"></button>
+                                        </div>
+                                        <div class="score-labels-row">
+                                            <span>1 (低)<br>纯计算或流程化</span>
+                                            <span>3 (中)<br>半理解半规则</span>
+                                            <span>5 (高)<br>完全依赖理解</span>
+                                        </div>
+                                        <input type="hidden" id="dim1" value="3"
+                                            data-tooltips='{"1":"举例: 汇率计算器 (纯规则)", "3":"举例: 关键信息提取 (半理解)", "5":"举例: 法律合同审查 (深层语义)"}'>
+                                        <div class="current-value">当前评分: <span id="val-dim1">3</span></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="dimension-card">
+                                <div class="dimension-header">
+                                    <h3>2. 模型擅长领域匹配</h3>
+                                    <span class="dimension-badge">能力匹配</span>
+                                </div>
+                                <div class="dimension-body">
+                                    <p class="core-question">核心问题：是否属于大模型已知擅长场景？</p>
+                                    <p class="eval-points">评估要点：问答、报告撰写、知识检索、内容生成、对话理解等</p>
+
+                                    <div class="score-container">
+                                        <div class="score-selector" data-dim="dim2">
+                                            <button type="button" class="score-btn" data-val="1"></button>
+                                            <button type="button" class="score-btn" data-val="2"></button>
+                                            <button type="button" class="score-btn active" data-val="3"></button>
+                                            <button type="button" class="score-btn" data-val="4"></button>
+                                            <button type="button" class="score-btn" data-val="5"></button>
+                                        </div>
+                                        <div class="score-labels-row">
+                                            <span>1 (低)<br>模型薄弱领域</span>
+                                            <span>3 (中)<br>相邻能力</span>
+                                            <span>5 (高)<br>已验证场景</span>
+                                        </div>
+                                        <input type="hidden" id="dim2" value="3"
+                                            data-tooltips='{"1":"举例: 复杂数学证明 (弱项)", "3":"举例: 一般代码补全 (常见)", "5":"举例: 营销文案生成 (强项)"}'>
+                                        <div class="current-value">当前评分: <span id="val-dim2">3</span></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- 层级二：业务成熟层 -->
+                        <section class="layer-section" id="layer-process">
+                            <div class="layer-header">
+                                <h2>二、业务成熟层 (Business Process Readiness)</h2>
+                                <div class="layer-score">得分: <span id="score-process">0</span></div>
+                            </div>
+
+                            <div class="dimension-card">
+                                <div class="dimension-header">
+                                    <h3>3. 业务规范与流程成熟度</h3>
+                                    <span class="dimension-badge">SOP完善度</span>
+                                </div>
+                                <div class="dimension-body">
+                                    <p class="core-question">核心问题：是否有明确的SOP、说明书、历史执行经验？</p>
+                                    <p class="eval-points">评估要点：有既定流程、清晰职责与操作步骤</p>
+
+                                    <div class="score-container">
+                                        <div class="score-selector" data-dim="dim3">
+                                            <button type="button" class="score-btn" data-val="1"></button>
+                                            <button type="button" class="score-btn" data-val="2"></button>
+                                            <button type="button" class="score-btn active" data-val="3"></button>
+                                            <button type="button" class="score-btn" data-val="4"></button>
+                                            <button type="button" class="score-btn" data-val="5"></button>
+                                        </div>
+                                        <div class="score-labels-row">
+                                            <span>1 (低)<br>无规范</span>
+                                            <span>3 (中)<br>有创新但需设计</span>
+                                            <span>5 (高)<br>稳定流程</span>
+                                        </div>
+                                        <input type="hidden" id="dim3" value="3"
+                                            data-tooltips='{"1":"举例: 创意头脑风暴 (无SOP)", "3":"举例: 客户投诉处理 (有大纲)", "5":"举例: 发票报销审批 (严格SOP)"}'>
+                                        <div class="current-value">当前评分: <span id="val-dim3">3</span></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="dimension-card">
+                                <div class="dimension-header">
+                                    <h3>4. 上下文与知识完备性</h3>
+                                    <span class="dimension-badge">数据可用性</span>
+                                </div>
+                                <div class="dimension-body">
+                                    <p class="core-question">核心问题：模型完成任务所需的知识是否可获取？</p>
+                                    <p class="eval-points">评估要点：数据上下文清晰、可控、来源可靠</p>
+
+                                    <div class="score-container">
+                                        <div class="score-selector" data-dim="dim4">
+                                            <button type="button" class="score-btn" data-val="1"></button>
+                                            <button type="button" class="score-btn" data-val="2"></button>
+                                            <button type="button" class="score-btn active" data-val="3"></button>
+                                            <button type="button" class="score-btn" data-val="4"></button>
+                                            <button type="button" class="score-btn" data-val="5"></button>
+                                        </div>
+                                        <div class="score-labels-row">
+                                            <span>1 (低)<br>关键知识缺失</span>
+                                            <span>3 (中)<br>需整理或补充</span>
+                                            <span>5 (高)<br>数据齐全已接入</span>
+                                        </div>
+                                        <input type="hidden" id="dim4" value="3"
+                                            data-tooltips='{"1":"举例: 偶发性故障诊断 (缺数据)", "3":"举例: 内部知识库问答 (需清洗)", "5":"举例: 电商订单查询 (API完备)"}'>
+                                        <div class="current-value">当前评分: <span id="val-dim4">3</span></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- 层级三：效益与可控层 -->
+                        <section class="layer-section" id="layer-benefit">
+                            <div class="layer-header">
+                                <h2>三、效益与可控层 (Benefit & Control)</h2>
+                                <div class="layer-score">得分: <span id="score-benefit">0</span></div>
+                            </div>
+
+                            <div class="dimension-card">
+                                <div class="dimension-header">
+                                    <h3>5. 容错性与人机协作机制</h3>
+                                    <span class="dimension-badge">风险控制</span>
+                                </div>
+                                <div class="dimension-body">
+                                    <p class="core-question">核心问题：场景能否容忍AI错误？是否可由人校验？</p>
+                                    <p class="eval-points">评估要点：结果可审阅、可修正、可回退</p>
+
+                                    <div class="score-container">
+                                        <div class="score-selector" data-dim="dim5">
+                                            <button type="button" class="score-btn" data-val="1"></button>
+                                            <button type="button" class="score-btn" data-val="2"></button>
+                                            <button type="button" class="score-btn active" data-val="3"></button>
+                                            <button type="button" class="score-btn" data-val="4"></button>
+                                            <button type="button" class="score-btn" data-val="5"></button>
+                                        </div>
+                                        <div class="score-labels-row">
+                                            <span>1 (低)<br>错误代价高</span>
+                                            <span>3 (中)<br>容错中等</span>
+                                            <span>5 (高)<br>人机协作良好</span>
+                                        </div>
+                                        <input type="hidden" id="dim5" value="3"
+                                            data-tooltips='{"1":"举例: 自动扣款交易 (零容错)", "3":"举例: 辅助代码编写 (程序员Review)", "5":"举例: 灵感生成工具 (错误无害)"}'>
+                                        <div class="current-value">当前评分: <span id="val-dim5">3</span></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="dimension-card">
+                                <div class="dimension-header">
+                                    <h3>6. ROI清晰度</h3>
+                                    <span class="dimension-badge">投入产出</span>
+                                </div>
+                                <div class="dimension-body">
+                                    <p class="core-question">核心问题：投入与产出是否可量化？</p>
+                                    <p class="eval-points">评估要点：成本、使用频次、节省时间/人力、用户覆盖度</p>
+
+                                    <div class="score-container">
+                                        <div class="score-selector" data-dim="dim6">
+                                            <button type="button" class="score-btn" data-val="1"></button>
+                                            <button type="button" class="score-btn" data-val="2"></button>
+                                            <button type="button" class="score-btn active" data-val="3"></button>
+                                            <button type="button" class="score-btn" data-val="4"></button>
+                                            <button type="button" class="score-btn" data-val="5"></button>
+                                        </div>
+                                        <div class="score-labels-row">
+                                            <span>1 (低)<br>难以衡量</span>
+                                            <span>3 (中)<br>可粗估</span>
+                                            <span>5 (高)<br>清晰明确</span>
+                                        </div>
+                                        <input type="hidden" id="dim6" value="3"
+                                            data-tooltips='{"1":"举例: 员工幸福感助手 (难量化)", "3":"举例: 客服自动回复 (省工时)", "5":"举例: 广告投放优化 (直接收益)"}'>
+                                        <div class="current-value">当前评分: <span id="val-dim6">3</span></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="dimension-card">
+                                <div class="dimension-header">
+                                    <h3>7. 结果可评估性</h3>
+                                    <span class="dimension-badge">效果验证</span>
+                                </div>
+                                <div class="dimension-body">
+                                    <p class="core-question">核心问题：能否明确评价“好坏”？</p>
+                                    <p class="eval-points">评估要点：有明确指标（准确率、满意度、效率提升）或可类量化标准</p>
+
+                                    <div class="score-container">
+                                        <div class="score-selector" data-dim="dim7">
+                                            <button type="button" class="score-btn" data-val="1"></button>
+                                            <button type="button" class="score-btn" data-val="2"></button>
+                                            <button type="button" class="score-btn active" data-val="3"></button>
+                                            <button type="button" class="score-btn" data-val="4"></button>
+                                            <button type="button" class="score-btn" data-val="5"></button>
+                                        </div>
+                                        <div class="score-labels-row">
+                                            <span>1 (低)<br>完全主观</span>
+                                            <span>3 (中)<br>部分主观</span>
+                                            <span>5 (高)<br>可量化/有基准</span>
+                                        </div>
+                                        <input type="hidden" id="dim7" value="3"
+                                            data-tooltips='{"1":"举例: 写一首“好”诗 (主观)", "3":"举例: 会议纪要生成 (有人工修正)", "5":"举例: 提取身份证号 (对/错分明)"}'>
+                                        <div class="current-value">当前评分: <span id="val-dim7">3</span></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+
+
+                    </form>
+
+                    <div id="result-section" class="hidden">
+                        <div class="result-header">
+                            <h2>评估结果</h2>
+                            <div class="total-score-badge">总分: <span id="total-score">0</span> / 35</div>
+                        </div>
+
+                        <div class="result-grid">
+                            <div class="recommendation-card" id="recommendation-card">
+                                <div class="rec-verdict-badge" id="recommendation-title">--</div>
+                                <p id="recommendation-desc" class="rec-desc">请完成左侧对话后查看结果。</p>
+                                <div class="ai-verdict" id="ai-verdict"
+                                    style="margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.1); font-style: italic; color: #a5b4fc; font-size: 0.9rem; display: none;">
+                                </div>
+                            </div>
+                            <div class="chart-container">
+                                <canvas id="radarChart"></canvas>
+                            </div>
+                            <!-- New: Quadrant Chart -->
+                            <div class="chart-container quadrant-container">
+                                <canvas id="quadrantChart"></canvas>
+                            </div>
+                            <div>
+                                <h4
+                                    style="margin: 0 0 10px 0; color: var(--text-secondary); font-size: 0.9rem; text-align: center;">
+                                    AI应用场景示例</h4>
+                                <div class="reference-container">
+                                    <img src="7a819018-8d6d-427e-a4ce-1ee4e7c368e8.png" alt="场景参考示例"
+                                        class="zoomable-img"
+                                        style="width: 100%; height: 100%; object-fit: contain; border-radius: 12px; cursor: pointer;">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="action-area" style="margin-top: 20px;">
+                            <button type="button" class="secondary-btn" onclick="exportReport()">导出完整报告</button>
+                        </div>
+                    </div>
+                </div> <!-- End Right Panel -->
+            </div> <!-- End Split Layout -->
+
+            <!-- History Section -->
+            <section id="history-section" style="margin-top: 60px;">
+                <div class="layer-header">
+                    <h2>评估历史记录</h2>
+                    <button type="button" class="secondary-btn" onclick="clearHistory()"
+                        style="padding: 4px 12px; font-size: 0.8rem;">清空历史</button>
+                </div>
+                <div id="history-list" class="history-list">
+                    <!-- History items will be injected here -->
+                    <p style="color: var(--text-secondary); text-align: center; padding: 20px;">暂无历史记录</p>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Image Zoom Modal -->
+    <div id="imageModal" class="modal">
+        <span class="close">&times;</span>
+        <img class="modal-content" id="imgFull">
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="script.js"></script>
+</body>
+
+</html>
