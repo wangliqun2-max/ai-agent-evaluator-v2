@@ -1,10 +1,12 @@
 import os
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 from dotenv import load_dotenv
 import requests
 
 load_dotenv()
+
+BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 app = Flask(__name__)
 # Enable CORS for all routes (important for frontend to communicate)
@@ -14,6 +16,17 @@ QWEN_API_KEY = os.getenv("QWEN_API_KEY")
 
 if not QWEN_API_KEY:
     print("Warning: QWEN_API_KEY is not set in .env")
+
+@app.route('/')
+def home():
+    return send_from_directory(BASE_DIR, 'index.html')
+
+@app.route('/<path:filename>')
+def serve_static(filename):
+    file_path = os.path.join(BASE_DIR, filename)
+    if os.path.isfile(file_path):
+        return send_from_directory(BASE_DIR, filename)
+    return "Not Found", 404
 
 @app.route('/api/chat', methods=['POST'])
 def chat():
