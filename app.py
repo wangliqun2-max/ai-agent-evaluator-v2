@@ -51,7 +51,7 @@ def chat():
                 'model': 'qwen-plus',
                 'messages': messages
             },
-            timeout=30
+            timeout=60
         )
         
         if not qwen_response.ok:
