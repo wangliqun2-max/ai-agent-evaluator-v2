@@ -783,7 +783,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         try {
             // Use full URL for local development (Flask on port 3000), and relative path for Vercel production
-            const API_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+            const API_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:')
                 ? 'http://localhost:3000/api/chat'
                 : '/api/chat';
 
@@ -816,12 +816,32 @@ document.addEventListener('DOMContentLoaded', function () {
             const aiRawOutput = data.choices[0]?.message?.content || "";
             chatHistory.push({ role: 'assistant', content: aiRawOutput });
 
-            // Detect JSON
+            // Detect JSON - robustly find the object containing "scores" key,
+            // ignoring inline non-JSON fragments like {dim1:5, dim2:4...}
             let parsedJson = null;
             try {
-                const jsonMatch = aiRawOutput.match(/\{[\s\S]*\}/);
-                if (jsonMatch) parsedJson = JSON.parse(jsonMatch[0]);
-            } catch (e) { }
+                const scoresIdx = aiRawOutput.lastIndexOf('"scores"');
+                if (scoresIdx !== -1) {
+                    // Walk backwards to find the opening {
+                    let start = scoresIdx;
+                    while (start >= 0 && aiRawOutput[start] !== '{') start--;
+                    if (start >= 0) {
+                        // Walk forward to find the matching closing }
+                        let depth = 0, end = start;
+                        for (let i = start; i < aiRawOutput.length; i++) {
+                            if (aiRawOutput[i] === '{') depth++;
+                            else if (aiRawOutput[i] === '}') { depth--; if (depth === 0) { end = i; break; } }
+                        }
+                        parsedJson = JSON.parse(aiRawOutput.slice(start, end + 1));
+                    }
+                }
+            } catch (e) {
+                // Fallback to original greedy match
+                try {
+                    const jsonMatch = aiRawOutput.match(/\{[\s\S]*\}/);
+                    if (jsonMatch) parsedJson = JSON.parse(jsonMatch[0]);
+                } catch (e2) { }
+            }
 
             if (parsedJson && parsedJson.scores && parsedJson.verdict_title) {
                 addMessageToUI('ai', `信息收集完毕！<br><br>评估分析完成。结果已生成并展示在右侧面板。`);
